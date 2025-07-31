@@ -1,0 +1,66 @@
+Create a full HTML and JavaScript (Three.js) implementation that simulates a 3D sneaker viewer based on the following requirements:
+
+Base Scene Setup
+- Use `Three.js` to render a 3D sneaker model inside a transparent canvas.
+- Set the background of the canvas and the scene to fully transparent.
+- Ensure the canvas supports antialiasing.
+- Add default lighting to simulate ambient light.
+- Enable camera control using orbit-style controls, but restrict the vertical angle to a minimum of -0.01 and a maximum of 0.01 radians.
+- Use a PerspectiveCamera positioned at z = 50 units.
+
+3D Model Loading
+- Load a USDZ (or alternatively a GLB/GLTF) model of a sneaker. Place it at the center of the scene.
+- Once the model is loaded:
+  - Automatically scale the model so its maximum dimension is 30 units.
+  - Center the model in X, Y, and Z axes.
+  - Continuously rotate it on the Y-axis (360 degrees every 6 seconds).
+
+Texturing & Coloring
+- The sneaker must support dynamic color changes using different textures for accent colors.
+- Use 5 layers of PNG textures:
+  - `texture_sneaker_1.png`
+  - `texture_sneaker_2.png`
+  - `texture_sneaker_3.png`
+  - `texture_sneaker_4.png`
+  - `texture_sneaker_5.png`
+- Apply color tints dynamically to each of these layers using a selected "GearColor" object.
+- Composite the final sneaker texture on a canvas of 1024x1024 px, then apply it as a material to the mesh node named `"Plane_2"` (or similar).
+
+Camera Effects
+- Add camera post-processing effects such as:
+  - Bloom effect (intensity: 0.7, blur radius: 5)
+  - Motion blur (intensity: 0.5)
+  - Contrast: 0.5
+  - Saturation: 1.05
+  - Focal length: 40
+- Disable automatic exposure adaptation.
+
+Logic & Visibility Handling
+- Only load and display the 3D sneaker if it is visible in the viewport.
+- Add a cleanup routine that pauses animations and removes the model from the scene when it's off-screen or the view is destroyed.
+
+Animation
+- Add an infinite Y-axis rotation animation to the entire model with a duration of 6 seconds per full rotation.
+- Ensure the animation is time-based and synced with scene rendering time (not CSS).
+
+Interactivity
+- Use mouse/touch interaction to orbit the camera around the sneaker.
+- Do **not** allow zooming or panning—only restricted orbit rotation.
+
+Optional Debug Tools
+- Add an option to enable bounding boxes and world origin visualization for debugging purposes.
+
+Assets Needed
+- A GLTF or USDZ 3D model named `sneaker_model.glb` or similar.
+- 5 PNG textures: `texture_sneaker_1.png` to `texture_sneaker_5.png`.
+
+Color Configuration
+- Define a `GearColor` object with:
+  - `mainColor`, `accent1`, `accent2`, `accent3`, `accent4`
+- Use this to tint each corresponding texture layer when compositing the final texture dynamically.
+
+Deployment Considerations
+- Ensure the viewer works smoothly on mobile and desktop.
+- Use responsive sizing for the canvas container.
+
+Name the main HTML file: `index.html` and keep all assets in a folder `/assets`.

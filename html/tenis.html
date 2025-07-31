@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Shoes</title>
+  <style>
+    body {
+      min-height: 100vh;
+      background: #181818;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+    }
+    .card {
+      background: #222;
+      border-radius: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      padding: 28px 20px 20px 20px;
+      width: 100%;
+      max-width: 370px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    .title {
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .shoe-img {
+      width: 180px;
+      height: 110px;
+      object-fit: contain;
+      margin-bottom: 10px;
+      transition: transform 0.6s cubic-bezier(.68,-0.55,.27,1.55);
+      will-change: transform;
+      display: block;
+    }
+    .play-btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 32px;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: background 0.2s;
+    }
+    .play-btn:hover {
+      background: #222;
+    }
+    .color-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 8px;
+      justify-content: center;
+    }
+    .color-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #444;
+      background: #222;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      cursor: pointer;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .color-btn:nth-child(2) { background: #333; }
+    .color-btn:nth-child(3) { background: #444; }
+    .color-btn:nth-child(4) { background: #555; }
+    .color-btn:active, .color-btn:focus {
+      border: 2px solid #fff;
+    }
+    .dropdown {
+      width: 100%;
+      background: #181818;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-sizing: border-box;
+    }
+    .dropdown label {
+      color: #bbb;
+      font-size: 0.98rem;
+      margin-bottom: 4px;
+    }
+    .dropdown select, .dropdown input[type="date"] {
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      outline: none;
+      margin-bottom: 0;
+    }
+    .info-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 8px;
+      justify-content: space-between;
+    }
+    .info-box {
+      background: #232323;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #eee;
+      font-size: 0.98rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    }
+    .info-label {
+      color: #aaa;
+      font-size: 0.85rem;
+      margin-bottom: 2px;
+    }
+    .info-value {
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 500;
+    }
+    .create-btn {
+      width: 100%;
+      background: linear-gradient(90deg,#222,#333);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 10px;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      transition: background 0.2s;
+    }
+    .create-btn:hover {
+      background: #444;
+    }
+    @media (max-width: 480px) {
+      .card {
+        max-width: 98vw;
+        padding: 18px 4vw 16px 4vw;
+      }
+      .shoe-img {
+        width: 140px;
+        height: 80px;
+      }
+    }
+    @keyframes spinY {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">New Shoes</div>
+    <img src="https://img.freepik.com/vector-gratis/dibujado-mano-ilustracion-dibujos-animados-zapatos-correr_23-2150961844.jpg" alt="Shoe" class="shoe-img" id="shoeImg">
+    <button class="play-btn" id="playBtn">Play</button>
+    <div class="color-row">
+      <button class="color-btn" aria-label="Gray 1"></button>
+      <button class="color-btn" aria-label="Gray 2"></button>
+      <button class="color-btn" aria-label="Gray 3"></button>
+      <button class="color-btn" aria-label="Gray 4"></button>
+    </div>
+    <div class="dropdown">
+      <label for="brandSelect">Shoe Brand</label>
+      <select id="brandSelect">
+        <option>New Balances</option>
+        <option>Nike</option>
+        <option>Adidas</option>
+        <option>Puma</option>
+        <option>Reebok</option>
+      </select>
+    </div>
+    <div class="dropdown">
+      <label for="dateInput">Commission Date</label>
+      <input type="date" id="dateInput">
+    </div>
+    <div class="info-row">
+      <div class="info-box">
+        <div class="info-label">Distance Tracked</div>
+        <div class="info-value">0mi</div>
+      </div>
+      <div class="info-box">
+        <div class="info-label">Time Tracked</div>
+        <div class="info-value">0hr</div>
+      </div>
+    </div>
+    <button class="create-btn">Create Shoes</button>
+  </div>
+  <script>
+    const playBtn = document.getElementById('playBtn');
+    const shoeImg = document.getElementById('shoeImg');
+    playBtn.addEventListener('click', () => {
+      shoeImg.style.animation = 'spinY 1.2s cubic-bezier(.68,-0.55,.27,1.55)';
+      shoeImg.style.transform = 'rotateY(360deg)';
+      setTimeout(() => {
+        shoeImg.style.animation = '';
+        shoeImg.style.transform = '';
+      }, 1200);
+    });
+  </script>
+</body>
+</html>
