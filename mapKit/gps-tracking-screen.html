@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPS Tracking Screen</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --white: #fff;
+      --gray: #444;
+      --neon: #39ff14;
+      --neon-shadow: 0 0 8px #39ff14, 0 0 16px #39ff14;
+      --font: 'Arial', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      background: url('https://via.placeholder.com/400x600/181c20/FFFFFF?text=Dark+Map') no-repeat center center;
+      background-size: cover;
+      overflow: hidden;
+    }
+
+    .map-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .play-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--bg);
+      color: var(--white);
+      border: 1px solid var(--white);
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 10px 0;
+    }
+
+    .filter-btn {
+      background: var(--bg);
+      color: var(--white);
+      border: 1px solid var(--white);
+      border-radius: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .progress-container {
+      width: 90%;
+      margin: 20px auto;
+    }
+
+    .progress-svg {
+      width: 100%;
+      height: 50px;
+    }
+
+    .blinking-marker {
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <button class="play-btn" id="playBtn">Play</button>
+    <svg class="map-svg" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+      <!-- White route line -->
+      <path id="route" d="M50,550 Q150,450 250,500 T350,300" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" />
+      <!-- Neon green line -->
+      <path id="greenRoute" d="M50,550 Q150,450 250,500 T350,300" stroke="var(--neon)" stroke-width="4" fill="none" stroke-linecap="round" />
+      <!-- Blinking marker -->
+      <circle id="marker" class="blinking-marker" cx="50" cy="550" r="8" fill="var(--neon)" />
+    </svg>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn">Walk</button>
+    <button class="filter-btn">2023</button>
+    <button class="filter-btn">This Month</button>
+  </div>
+
+  <div class="progress-container">
+    <svg class="progress-svg" viewBox="0 0 400 50" xmlns="http://www.w3.org/2000/svg">
+      <!-- Dotted gray line -->
+      <path d="M20,30 Q100,10 200,20 T380,10" stroke="var(--gray)" stroke-width="2" fill="none" stroke-dasharray="5,5" />
+      <!-- Green progress line -->
+      <path id="progress" d="M20,30 Q100,10 200,20 T380,10" stroke="var(--neon)" stroke-width="3" fill="none" />
+    </svg>
+  </div>
+
+  <script>
+    function animatePath(path, duration, callback) {
+      const length = path.getTotalLength();
+      path.style.strokeDasharray = length;
+      path.style.strokeDashoffset = length;
+      let start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        path.style.strokeDashoffset = length * (1 - progress);
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else if (callback) {
+          callback();
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function animateMarker(path, marker, duration) {
+      const length = path.getTotalLength();
+      let start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const point = path.getPointAtLength(length * progress);
+        marker.setAttribute('cx', point.x);
+        marker.setAttribute('cy', point.y);
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function startAnimation() {
+      const route = document.getElementById('route');
+      const greenRoute = document.getElementById('greenRoute');
+      const marker = document.getElementById('marker');
+      const progress = document.getElementById('progress');
+
+      animatePath(route, 2000, () => {
+        animatePath(greenRoute, 2000);
+        animateMarker(greenRoute, marker, 2000);
+      });
+
+      animatePath(progress, 2000);
+    }
+
+    document.getElementById('playBtn').addEventListener('click', startAnimation);
+    window.addEventListener('DOMContentLoaded', startAnimation);
+  </script>
+</body>
+</html>
