@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3-2-1 GO Countdown</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background: #18181a;
+        min-height: 100vh;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      }
+      #map {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+      .map-darken {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.4);
+        z-index: 1;
+        pointer-events: none;
+      }
+      .countdown-container {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        pointer-events: none;
+        transition: opacity 0.5s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-inner {
+        min-width: 180px;
+        min-height: 180px;
+        background: rgba(20,20,20,0.7);
+        border-radius: 40px;
+        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        backdrop-filter: blur(12px);
+        pointer-events: auto;
+        transition: opacity 0.4s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-number {
+        font-size: 5rem;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 0.1em;
+        opacity: 0;
+        transform: translateX(0) scale(0.7);
+        filter: drop-shadow(0 2px 16px #0008);
+        transition: none;
+        will-change: transform, opacity;
+        user-select: none;
+      }
+      .countdown-number.show {
+        opacity: 1;
+        transform: translateX(50px) scale(1);
+        transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-number.hide {
+        opacity: 0;
+        transform: translateX(70px) scale(1.1);
+        transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-number.go {
+        font-size: 6rem;
+        color: #ffe066;
+        text-shadow: 0 0 32px #ffe06688, 0 2px 16px #0008;
+        font-weight: 900;
+      }
+      .countdown-number.go.show {
+        transform: translateX(50px) scale(1.25);
+        transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      }
+      .skip-btn {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        background: rgba(30,30,30,0.7);
+        color: #fff;
+        border: none;
+        border-radius: 24px;
+        padding: 14px 36px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        box-shadow: 0 2px 12px #0005;
+        transition: background 0.2s;
+        pointer-events: auto;
+      }
+      .skip-btn:active {
+        background: rgba(60,60,60,0.8);
+      }
+      @media (max-width: 600px) {
+        .countdown-inner {
+          min-width: 120px;
+          min-height: 120px;
+          border-radius: 24px;
+        }
+        .countdown-number {
+          font-size: 3.2rem;
+        }
+        .countdown-number.go {
+          font-size: 4rem;
+        }
+        .skip-btn {
+          font-size: 1rem;
+          padding: 10px 24px;
+        }
+      }
+    </style>
+</head>
+<body>
+  <body>
+    <div id="map"></div>
+    <div class="map-darken"></div>
+    <div class="centered-flex-layout">
+      <div class="countdown-oval">
+        <span class="countdown-number" id="countdownNumber"></span>
+      </div>
+      <div class="get-ready-text">Get Ready!</div>
+      <div class="robot-container" id="robotContainer" tabindex="0">
+        <div class="robot">
+          <div class="robot-head">
+            <div class="robot-ear left"></div>
+            <div class="robot-ear right"></div>
+            <div class="robot-face">
+              <div class="robot-eye left"></div>
+              <div class="robot-eye right"></div>
+              <div class="robot-brow left"></div>
+              <div class="robot-brow right"></div>
+              <div class="robot-mouth"></div>
+              <div class="robot-blush left"></div>
+              <div class="robot-blush right"></div>
+            </div>
+            <div class="robot-headphones"></div>
+          </div>
+          <div class="robot-body"></div>
+          <div class="robot-arm left">
+            <div class="coffee-cup">
+              <div class="cup-body"></div>
+              <div class="cup-handle"></div>
+              <div class="cup-steam"></div>
+            </div>
+          </div>
+          <div class="robot-arm right"></div>
+          <div class="robot-leg left"></div>
+          <div class="robot-leg right"></div>
+        </div>
+      </div>
+      <div class="audio-controls">
+        <span class="audio-icon play" id="playButton" title="Play">
+          <svg width="28" height="28" viewBox="0 0 28 28"><polygon points="8,6 24,14 8,22" fill="#fff"/></svg>
+        </span>
+        <div class="audio-progress">
+          <div class="audio-progress-bar" id="audioProgressBar"></div>
+        </div>
+        <span class="audio-icon add" title="Add">
+          <svg width="28" height="28" viewBox="0 0 28 28"><rect x="12" y="5" width="4" height="18" fill="#fff"/><rect x="5" y="12" width="18" height="4" fill="#fff"/></svg>
+        </span>
+        <span class="audio-icon volume" title="Volume">
+          <svg width="28" height="28" viewBox="0 0 28 28"><polygon points="6,10 12,10 16,6 16,22 12,18 6,18" fill="#fff"/><path d="M18,10 Q22,14 18,18" stroke="#fff" stroke-width="2" fill="none"/></svg>
+        </span>
+        <span class="audio-icon settings" title="Settings">
+          <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="3" fill="#fff"/><circle cx="14" cy="14" r="10" stroke="#fff" stroke-width="2" fill="none"/></svg>
+        </span>
+      </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+      body, html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #18181a;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      }
+      #map {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+      .map-darken {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 1;
+        pointer-events: none;
+      }
+      .centered-flex-layout {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      .countdown-oval {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 180px;
+        height: 110px;
+        background: rgba(20,20,20,0.7);
+        border-radius: 60px / 55px;
+        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+        margin-bottom: 18px;
+        backdrop-filter: blur(12px);
+        pointer-events: auto;
+      }
+      .countdown-number {
+        font-size: 4.5rem;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: 0.1em;
+        opacity: 0;
+        transform: translateX(60px) scale(0.7);
+        filter: drop-shadow(0 2px 16px #0008);
+        transition: none;
+        will-change: transform, opacity;
+        user-select: none;
+      }
+      .countdown-number.show {
+        opacity: 1;
+        transform: translateX(0) scale(1.08);
+        transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-number.hide {
+        opacity: 0;
+        transform: translateX(-60px) scale(1.13);
+        transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+      }
+      .countdown-number.go {
+        font-size: 5.2rem;
+        color: #ffe066;
+        text-shadow: 0 0 32px #ffe06688, 0 2px 16px #0008;
+        font-weight: 900;
+      }
+      .countdown-number.go.show {
+        transform: translateX(0) scale(1.25);
+        transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      }
+      .get-ready-text {
+        margin-top: 0.5em;
+        font-size: 1.5rem;
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-align: center;
+        text-shadow: 0 2px 8px #0008;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        pointer-events: auto;
+      }
+      .robot-container {
+        margin-top: 2.5em;
+        margin-bottom: 2.5em;
+        width: 120px;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      .robot {
+        position: relative;
+        width: 80px;
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .robot-head {
+        position: relative;
+        width: 60px;
+        height: 44px;
+        background: linear-gradient(180deg, #4a8cff 60%, #222 100%);
+        border-radius: 22px 22px 18px 18px / 28px 28px 18px 18px;
+        margin: 0 auto;
+        z-index: 2;
+        box-shadow: 0 2px 8px #0008;
+      }
+      .robot-ear {
+        position: absolute;
+        top: 12px;
+        width: 10px;
+        height: 18px;
+        background: #222;
+        border-radius: 50%;
+        z-index: 1;
+      }
+      .robot-ear.left { left: -12px; }
+      .robot-ear.right { right: -12px; }
+      .robot-headphones {
+        position: absolute;
+        top: 0px;
+        left: -8px;
+        width: 76px;
+        height: 32px;
+        border-radius: 20px 20px 18px 18px / 18px 18px 12px 12px;
+        background: linear-gradient(90deg, #222 0%, #666 100%);
+        box-shadow: 0 2px 8px #0008;
+        z-index: 3;
+      }
+      .robot-face {
+        position: absolute;
+        top: 10px;
+        left: 0;
+        width: 60px;
+        height: 34px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+      }
+      .robot-eye {
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-radius: 50%;
+        margin: 0 6px;
+        box-shadow: 0 1px 4px #0008;
+        animation: robot-eye-blink 3s infinite;
+      }
+      @keyframes robot-eye-blink {
+        0%, 92%, 100% { height: 10px; }
+        95% { height: 2px; }
+        97% { height: 10px; }
+      }
+      .robot-brow {
+        position: absolute;
+        width: 14px;
+        height: 3px;
+        background: #222;
+        border-radius: 2px;
+        top: 2px;
+      }
+      .robot-brow.left {
+        left: 7px;
+        transform: rotate(-12deg);
+      }
+      .robot-brow.right {
+        right: 7px;
+        transform: rotate(12deg);
+      }
+      .robot-blush {
+        position: absolute;
+        width: 8px;
+        height: 4px;
+        background: #ffe066cc;
+        border-radius: 4px 4px 8px 8px;
+        bottom: 2px;
+        opacity: 0.7;
+      }
+      .robot-blush.left { left: 8px; }
+      .robot-blush.right { right: 8px; }
+      .robot-mouth {
+        width: 18px;
+        height: 8px;
+        border-radius: 0 0 12px 12px;
+        background: #ffe066;
+        margin-left: 4px;
+        margin-top: 8px;
+        box-shadow: 0 1px 4px #0004;
+      }
+      .robot-body {
+        width: 36px;
+        height: 38px;
+        background: linear-gradient(180deg, #333 60%, #111 100%);
+        border-radius: 16px 16px 18px 18px / 18px 18px 20px 20px;
+        margin: 0 auto;
+        margin-top: -6px;
+        box-shadow: 0 2px 8px #0008;
+      }
+      .robot-arm {
+        position: absolute;
+        top: 38px;
+        width: 12px;
+        height: 32px;
+        background: #222;
+        border-radius: 8px;
+        z-index: 1;
+        box-shadow: 0 2px 8px #0008;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .robot-arm.left {
+        left: -14px;
+        transform: rotate(-28deg);
+        animation: robot-arm-left 1.2s infinite linear;
+        transform-origin: top right;
+      }
+      .robot-arm.right {
+        right: -14px;
+        transform: rotate(18deg);
+        animation: robot-arm-right 1.2s infinite linear;
+        transform-origin: top left;
+      }
+      @keyframes robot-arm-left {
+        0%, 100% { transform: rotate(-28deg); }
+        50% { transform: rotate(-38deg); }
+      }
+      @keyframes robot-arm-right {
+        0%, 100% { transform: rotate(18deg); }
+        50% { transform: rotate(38deg); }
+      }
+      .coffee-cup {
+        position: absolute;
+        left: -2px;
+        bottom: -8px;
+        width: 18px;
+        height: 22px;
+        z-index: 2;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .cup-body {
+        width: 12px;
+        height: 14px;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+        border: 2px solid #e0e0e0;
+        box-shadow: 0 1px 4px #0003;
+        position: absolute;
+        left: 2px;
+        bottom: 2px;
+      }
+      .cup-handle {
+        position: absolute;
+        right: -4px;
+        bottom: 6px;
+        width: 6px;
+        height: 10px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px 8px 8px 8px;
+        border-left: none;
+        border-top: none;
+      }
+      .cup-steam {
+        position: absolute;
+        left: 7px;
+        top: -8px;
+        width: 2px;
+        height: 10px;
+        border-radius: 2px;
+        background: linear-gradient(180deg, #fff8 0%, #fff0 100%);
+        animation: cup-steam 1.5s infinite linear;
+      }
+      @keyframes cup-steam {
+        0%, 100% { opacity: 0.7; transform: translateY(0) scaleX(1); }
+        50% { opacity: 0.2; transform: translateY(-6px) scaleX(1.2); }
+      }
+      .robot-leg {
+        position: absolute;
+        top: 70px;
+        width: 12px;
+        height: 38px;
+        background: #222;
+        border-radius: 8px;
+        z-index: 0;
+        box-shadow: 0 2px 8px #0008;
+      }
+      .robot-leg.left {
+        left: 4px;
+        animation: robot-leg-left 1.2s infinite linear;
+        transform-origin: top right;
+      }
+      .robot-leg.right {
+        right: 4px;
+        animation: robot-leg-right 1.2s infinite linear;
+        transform-origin: top left;
+      }
+      @keyframes robot-leg-left {
+        0%, 100% { transform: rotate(-10deg); }
+        50% { transform: rotate(18deg); }
+      }
+      @keyframes robot-leg-right {
+        0%, 100% { transform: rotate(10deg); }
+        50% { transform: rotate(-18deg); }
+      }
+      .audio-controls {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100vw;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        background: rgba(20,20,20,0.85);
+        padding: 18px 0 10px 0;
+        z-index: 3;
+        box-shadow: 0 -2px 16px #0008;
+        pointer-events: auto;
+      }
+      .audio-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+      }
+      .audio-icon:hover {
+        opacity: 1;
+      }
+      .audio-progress {
+        flex: 1 1 0;
+        margin: 0 16px;
+        height: 8px;
+        background: #222;
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 1px 4px #0008;
+      }
+      .audio-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #ffe066 0%, #fffbe6 100%);
+        border-radius: 6px;
+        transition: width 0.3s cubic-bezier(.4,0,.2,1);
+      }
+      @media (max-width: 600px) {
+        .centered-flex-layout {
+          padding-top: 0;
+        }
+        .countdown-oval {
+          width: 120px;
+          height: 70px;
+          border-radius: 40px / 30px;
+        }
+        .robot-container {
+          width: 80px;
+          height: 90px;
+        }
+        .audio-controls {
+          padding: 10px 0 6px 0;
+        }
+      }
+    </style>
+    <script>
+      // Set skip to true to skip animation and immediately finish
+      let skip = false;
+      let running = false;
+      // Map setup
+      window.addEventListener('DOMContentLoaded', () => {
+        const map = L.map('map', {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          tap: false,
+        }).setView([40.7128, -74.0060], 13); // New York City
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+        }).addTo(map);
+      });
+
+      // Countdown logic
+      const sequence = ["3", "2", "1", "GO"];
+      const durations = [1000, 1000, 1000, 1000];
+      let current = 0;
+      let finished = false;
+      const numberEl = document.getElementById("countdownNumber");
+      const robotContainer = document.getElementById("robotContainer");
+      const progressBar = document.getElementById("audioProgressBar");
+      const playButton = document.getElementById("playButton");
+
+      function finishedAction() {
+        document.querySelector('.countdown-oval').style.opacity = 0;
+        document.querySelector('.get-ready-text').style.opacity = 0;
+        setTimeout(() => {
+          document.querySelector('.countdown-oval').style.display = "none";
+          document.querySelector('.get-ready-text').style.display = "none";
+        }, 600);
+        progressBar.style.width = '100%';
+        running = false;
+        console.log('Finished!');
+      }
+      function resetCountdown() {
+        skip = false;
+        running = true;
+        document.querySelector('.countdown-oval').style.display = "flex";
+        document.querySelector('.get-ready-text').style.display = "block";
+        setTimeout(() => {
+          document.querySelector('.countdown-oval').style.opacity = 1;
+          document.querySelector('.get-ready-text').style.opacity = 1;
+        }, 10);
+        progressBar.style.width = '0%';
+        showNumber(0);
+      }
+      function showNumber(idx) {
+        if (skip) {
+          finishedAction();
+          return;
+        }
+        if (idx >= sequence.length) {
+          finishedAction();
+          return;
+        }
+        numberEl.textContent = sequence[idx];
+        numberEl.className = "countdown-number" + (sequence[idx] === "GO" ? " go" : "");
+        void numberEl.offsetWidth;
+        numberEl.classList.add("show");
+        numberEl.classList.remove("hide");
+        progressBar.style.width = ((idx) / 3 * 100) + '%';
+        setTimeout(() => {
+          numberEl.classList.remove("show");
+          numberEl.classList.add("hide");
+          setTimeout(() => {
+            showNumber(idx + 1);
+          }, 200);
+        }, durations[idx]);
+      }
+      robotContainer.addEventListener("click", () => {
+        if (!running) {
+          resetCountdown();
+        } else {
+          skip = true;
+          finishedAction();
+        }
+      });
+      robotContainer.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          if (!running) {
+            resetCountdown();
+          } else {
+            skip = true;
+            finishedAction();
+          }
+        }
+      });
+      playButton.addEventListener("click", () => {
+        if (!running) {
+          resetCountdown();
+        }
+      });
+      window.addEventListener("DOMContentLoaded", () => {
+        resetCountdown();
+      });
+    </script>
+</body>
+</html>
