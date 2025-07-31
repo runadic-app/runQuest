@@ -33,14 +33,93 @@
       margin-bottom: 8px;
       letter-spacing: 0.5px;
     }
-    .shoe-img {
+    /* Replace .shoe-img with .shoe-css tennis illustration */
+    .shoe-css {
       width: 180px;
       height: 110px;
-      object-fit: contain;
+      position: relative;
       margin-bottom: 10px;
-      transition: transform 0.6s cubic-bezier(.68,-0.55,.27,1.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 600px;
       will-change: transform;
+      transition: transform 0.6s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    .rotateY {
+      animation: spinY 3s linear infinite;
+    }
+    @keyframes spinY {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+    .sole {
+      position: absolute;
+      bottom: 10px;
+      left: 30px;
+      width: 120px;
+      height: 18px;
+      background: #e0e0e0;
+      border-radius: 0 0 40px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      z-index: 1;
+    }
+    .body {
+      position: absolute;
+      left: 38px;
+      top: 28px;
+      width: 104px;
+      height: 48px;
+      background: #bdbdbd;
+      border-radius: 50px 60px 40px 40px/40px 50px 30px 30px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      z-index: 2;
+      transition: background 0.3s;
+    }
+    .laces {
+      position: absolute;
+      left: 60px;
+      top: 38px;
+      width: 60px;
+      height: 10px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      z-index: 3;
+    }
+    .laces::before, .laces::after {
+      content: '';
       display: block;
+      width: 60px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      position: absolute;
+      left: 0;
+    }
+    .laces::before { top: 0; }
+    .laces::after { top: 6px; }
+    .toe {
+      position: absolute;
+      left: 30px;
+      top: 54px;
+      width: 38px;
+      height: 28px;
+      background: #e0e0e0;
+      border-radius: 40px 40px 40px 40px/30px 30px 30px 30px;
+      z-index: 4;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    }
+    .heel {
+      position: absolute;
+      left: 120px;
+      top: 38px;
+      width: 22px;
+      height: 34px;
+      background: #757575;
+      border-radius: 20px 30px 20px 20px/20px 30px 20px 20px;
+      z-index: 5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
     }
     .play-btn {
       background: #111;
@@ -159,27 +238,30 @@
         max-width: 98vw;
         padding: 18px 4vw 16px 4vw;
       }
-      .shoe-img {
+      .shoe-css {
         width: 140px;
         height: 80px;
       }
-    }
-    @keyframes spinY {
-      0% { transform: rotateY(0deg); }
-      100% { transform: rotateY(360deg); }
     }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="title">New Shoes</div>
-    <img src="https://img.freepik.com/vector-gratis/dibujado-mano-ilustracion-dibujos-animados-zapatos-correr_23-2150961844.jpg" alt="Shoe" class="shoe-img" id="shoeImg">
+    <div class="shoe-css" id="shoeCss">
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="100%" height="100%" viewBox="0 0 1280 640" preserveAspectRatio="xMidYMid meet" style="width:180px;height:110px;display:block;">
+        <g transform="translate(0,640) scale(0.1,-0.1)" fill="#fff" stroke="none">
+          <path d="M4025 6153 c-66 -30 -170 -79 -230 -108 -312 -150 -342 -321 -111 -642 45 -62 66 -101 66 -121 0 -58 -31 -132 -79 -189 -26 -32 -54 -71 -62 -86 -14 -28 -44 -44 -339 -178 -79 -36 -92 -39 -177 -39 -164 0 -416 66 -665 175 -260 114 -297 152 -533 545 -133 222 -154 251 -215 282 -138 70 -526 -25 -750 -183 -102 -72 -225 -260 -395 -604 -179 -363 -281 -596 -299 -680 -48 -230 -66 -549 -74 -1330 -4 -363 -8 -645 -10 -627 -3 26 -8 32 -27 32 -28 0 -21 39 -81 -445 -31 -255 -43 -387 -39 -425 13 -111 56 -304 80 -355 50 -105 149 -173 310 -213 283 -71 1908 -331 2080 -333 28 -1 147 17 265 40 587 110 826 132 1071 96 136 -20 151 -25 59 -21 -41 2 -65 2 -52 -1 12 -2 20 -9 16 -14 -17 -29 90 -78 246 -113 102 -23 396 -65 575 -81 33 -3 69 -8 80 -10 11 -3 -7 9 -40 25 -74 38 -58 34 70 -18 365 -146 723 -224 1155 -251 455 -30 1395 -40 1765 -21 528 28 888 85 1659 261 552 126 1499 376 1721 455 271 97 580 308 657 451 39 72 70 250 71 403 0 202 -28 262 -235 510 -127 151 -188 204 -228 198 -25 -4 -27 -1 -44 66 -43 169 -131 292 -280 390 -123 80 -345 193 -417 212 -97 25 -393 14 -724 -26 -159 -20 -312 -33 -395 -33 -126 -2 -140 0 -210 27 -96 37 -186 88 -440 251 -113 72 -222 141 -242 154 -21 12 -38 29 -38 36 0 20 -40 45 -73 45 -17 0 -82 29 -156 69 -69 38 -283 153 -475 256 -192 103 -358 197 -368 211 -11 13 -35 26 -56 30 -41 7 -765 390 -771 408 -2 6 -19 26 -38 44 -29 30 -37 33 -70 28 -34 -5 -61 8 -272 122 -231 125 -235 128 -246 167 -14 52 -43 67 -111 59 -51 -6 -56 -4 -233 91 -166 89 -181 99 -181 124 0 15 -7 36 -15 47 -20 26 -19 34 5 34 32 0 70 44 70 81 0 48 -66 105 -191 167 -235 116 -397 121 -531 18 l-43 -34 -80 56 c-246 170 -421 344 -510 505 -20 37 -40 67 -43 66 -4 -1 -61 -26 -127 -56z m1150 -641 c44 -15 80 -31 80 -36 0 -10 -65 -34 -109 -40 -17 -3 -45 -8 -62 -11 -24 -5 -43 1 -92 30 -34 20 -62 40 -62 44 0 15 74 40 120 40 25 0 81 -12 125 -27z m-1167 -4779 c-10 -2 -28 -2 -40 0 -13 2 -5 4 17 4 22 1 32 -1 23 -4z m55 -10 c-7 -2 -19 -2 -25 0 -7 3 -2 5 12 5 14 0 19 -2 13 -5z m54 -9 c-3 -3 -12 -4 -19 -1 -8 3 -5 6 6 6 11 1 17 -2 13 -5z m60 -10 c-3 -3 -12 -4 -19 -1 -8 3 -5 6 6 6 11 1 17 -2 13 -5z"/>
+        </g>
+      </svg>
+    </div>
     <button class="play-btn" id="playBtn">Play</button>
     <div class="color-row">
-      <button class="color-btn" aria-label="Gray 1"></button>
-      <button class="color-btn" aria-label="Gray 2"></button>
-      <button class="color-btn" aria-label="Gray 3"></button>
-      <button class="color-btn" aria-label="Gray 4"></button>
+      <button class="color-btn" data-color="#e53935" aria-label="Red" style="background:#e53935;"></button>
+      <button class="color-btn" data-color="#43a047" aria-label="Green" style="background:#43a047;"></button>
+      <button class="color-btn" data-color="#1e88e5" aria-label="Blue" style="background:#1e88e5;"></button>
+      <button class="color-btn" data-color="#fbc02d" aria-label="Yellow" style="background:#fbc02d;"></button>
+      <button class="color-btn" data-color="#8e24aa" aria-label="Purple" style="background:#8e24aa;"></button>
     </div>
     <div class="dropdown">
       <label for="brandSelect">Shoe Brand</label>
@@ -209,14 +291,36 @@
   </div>
   <script>
     const playBtn = document.getElementById('playBtn');
-    const shoeImg = document.getElementById('shoeImg');
+    const shoeCss = document.getElementById('shoeCss');
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const svg = shoeCss.querySelector('svg');
+    const path = svg.querySelector('path');
+    let spinning = false;
     playBtn.addEventListener('click', () => {
-      shoeImg.style.animation = 'spinY 1.2s cubic-bezier(.68,-0.55,.27,1.55)';
-      shoeImg.style.transform = 'rotateY(360deg)';
-      setTimeout(() => {
-        shoeImg.style.animation = '';
-        shoeImg.style.transform = '';
-      }, 1200);
+      if (!spinning) {
+        spinning = true;
+        shoeCss.classList.add('rotateY');
+      } else {
+        shoeCss.classList.remove('rotateY');
+        spinning = false;
+      }
+    });
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach(b => b.style.border = '2px solid #444');
+        btn.style.border = '2px solid #fff';
+        // Animate color change
+        path.animate([
+          { fill: path.getAttribute('fill') },
+          { fill: btn.getAttribute('data-color') }
+        ], {
+          duration: 400,
+          fill: 'forwards'
+        });
+        setTimeout(() => {
+          path.setAttribute('fill', btn.getAttribute('data-color'));
+        }, 400);
+      });
     });
   </script>
 </body>

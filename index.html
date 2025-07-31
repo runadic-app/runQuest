@@ -2,6 +2,340 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Sneaker Viewer</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+    #viewer-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+    #debug-tools {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(255,255,255,0.7);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewer-container">
+    <div id="debug-tools">
+      <label><input type="checkbox" id="show-bbox"> Show Bounding Box</label><br>
+      <label><input type="checkbox" id="show-origin"> Show World Origin</label>
+    </div>
+  </div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.154.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.154.0/examples/jsm/loaders/GLTFLoader.js';
+    import { EffectComposer } from 'https://unpkg.com/three@0.154.0/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'https://unpkg.com/three@0.154.0/examples/jsm/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'https://unpkg.com/three@0.154.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+    import { ShaderPass } from 'https://unpkg.com/three@0.154.0/examples/jsm/postprocessing/ShaderPass.js';
+    import { GammaCorrectionShader } from 'https://unpkg.com/three@0.154.0/examples/jsm/shaders/GammaCorrectionShader.js';
+
+    // GearColor config
+    const GearColor = {
+      mainColor: '#ffffff',
+      accent1: '#ff0000',
+      accent2: '#00ff00',
+      accent3: '#0000ff',
+      accent4: '#ffff00'
+    };
+
+    // Responsive canvas
+    const container = document.getElementById('viewer-container');
+    let width = container.clientWidth;
+    let height = container.clientHeight;
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = null;
+
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 50);
+
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: false
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    directionalLight.position.set(10, 20, 30);
+    scene.add(directionalLight);
+
+    // Orbit Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.minPolarAngle = Math.PI / 2 - 0.01;
+    controls.maxPolarAngle = Math.PI / 2 + 0.01;
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // Post-processing
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      0.7, // strength
+      5, // radius
+      0.85 // threshold
+    );
+    composer.addPass(bloomPass);
+    // Contrast & Saturation shader
+    const colorShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        contrast: { value: 0.5 },
+        saturation: { value: 1.05 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float contrast;
+        uniform float saturation;
+        varying vec2 vUv;
+        void main() {
+          vec4 color = texture2D(tDiffuse, vUv);
+          color.rgb = (color.rgb - 0.5) * contrast + 0.5;
+          float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+          color.rgb = mix(vec3(luma), color.rgb, saturation);
+          gl_FragColor = color;
+        }
+      `
+    };
+    const colorPass = new ShaderPass(colorShader);
+    composer.addPass(colorPass);
+    // Gamma correction
+    composer.addPass(new ShaderPass(GammaCorrectionShader));
+
+    // Motion blur (simple accumulation)
+    let lastFrame;
+    let motionBlurStrength = 0.5;
+    function applyMotionBlur() {
+      // Placeholder: Three.js does not natively support motion blur, so this is a stub.
+    }
+
+    // Asset paths
+    const modelPath = './assets/sneaker_model.glb';
+    const texturePaths = [
+      './assets/texture_sneaker_1.png',
+      './assets/texture_sneaker_2.png',
+      './assets/texture_sneaker_3.png',
+      './assets/texture_sneaker_4.png',
+      './assets/texture_sneaker_5.png'
+    ];
+
+    // Texture compositing
+    async function compositeSneakerTexture(gearColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      for (let i = 0; i < texturePaths.length; i++) {
+        const img = await loadImage(texturePaths[i]);
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(img, 0, 0, 1024, 1024);
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = [gearColor.mainColor, gearColor.accent1, gearColor.accent2, gearColor.accent3, gearColor.accent4][i];
+        ctx.globalAlpha = 0.7;
+        ctx.fillRect(0, 0, 1024, 1024);
+        ctx.restore();
+      }
+      return new THREE.CanvasTexture(canvas);
+    }
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    // Model loading and setup
+    let sneakerMesh = null;
+    let animationActive = false;
+    let animationStartTime = 0;
+    let boundingBoxHelper = null;
+    let originHelper = null;
+    async function loadSneakerModel() {
+      const loader = new GLTFLoader();
+      loader.load(modelPath, async (gltf) => {
+        const model = gltf.scene;
+        // Find mesh named "Plane_2" or similar
+        let targetMesh = null;
+        model.traverse((child) => {
+          if (child.isMesh && (child.name === 'Plane_2' || child.name.includes('Plane'))) {
+            targetMesh = child;
+          }
+        });
+        if (!targetMesh) {
+          targetMesh = model.getObjectByProperty('type', 'Mesh');
+        }
+        // Composite texture
+        const sneakerTexture = await compositeSneakerTexture(GearColor);
+        if (targetMesh) {
+          targetMesh.material.map = sneakerTexture;
+          targetMesh.material.needsUpdate = true;
+        }
+        // Scale and center
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 30 / maxDim;
+        model.scale.setScalar(scale);
+        box.setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        // Add to scene
+        scene.add(model);
+        sneakerMesh = model;
+        animationActive = true;
+        animationStartTime = performance.now();
+        // Debug tools
+        if (document.getElementById('show-bbox').checked) {
+          boundingBoxHelper = new THREE.BoxHelper(model, 0xff00ff);
+          scene.add(boundingBoxHelper);
+        }
+        if (document.getElementById('show-origin').checked) {
+          originHelper = new THREE.AxesHelper(10);
+          scene.add(originHelper);
+        }
+      });
+    }
+
+    // Visibility handling
+    function isInViewport() {
+      const rect = container.getBoundingClientRect();
+      return (
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.left < window.innerWidth &&
+        rect.top < window.innerHeight
+      );
+    }
+    function cleanupSneakerModel() {
+      if (sneakerMesh) {
+        scene.remove(sneakerMesh);
+        sneakerMesh = null;
+      }
+      animationActive = false;
+      if (boundingBoxHelper) {
+        scene.remove(boundingBoxHelper);
+        boundingBoxHelper = null;
+      }
+      if (originHelper) {
+        scene.remove(originHelper);
+        originHelper = null;
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      if (!isInViewport()) {
+        cleanupSneakerModel();
+        return;
+      } else if (!sneakerMesh) {
+        loadSneakerModel();
+        return;
+      }
+      // Infinite Y rotation
+      if (animationActive && sneakerMesh) {
+        const elapsed = (performance.now() - animationStartTime) / 1000;
+        const angle = (elapsed % 6) / 6 * Math.PI * 2;
+        sneakerMesh.rotation.y = angle;
+      }
+      controls.update();
+      composer.render();
+      applyMotionBlur();
+      if (boundingBoxHelper) boundingBoxHelper.update();
+    }
+    animate();
+
+    // Responsive resize
+    window.addEventListener('resize', () => {
+      width = container.clientWidth;
+      height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+      composer.setSize(width, height);
+    });
+
+    // Debug tools UI
+    const debugTools = document.getElementById('debug-tools');
+    debugTools.style.display = 'block';
+    document.getElementById('show-bbox').addEventListener('change', () => {
+      if (sneakerMesh) {
+        if (document.getElementById('show-bbox').checked) {
+          boundingBoxHelper = new THREE.BoxHelper(sneakerMesh, 0xff00ff);
+          scene.add(boundingBoxHelper);
+        } else if (boundingBoxHelper) {
+          scene.remove(boundingBoxHelper);
+          boundingBoxHelper = null;
+        }
+      }
+    });
+    document.getElementById('show-origin').addEventListener('change', () => {
+      if (document.getElementById('show-origin').checked) {
+        originHelper = new THREE.AxesHelper(10);
+        scene.add(originHelper);
+      } else if (originHelper) {
+        scene.remove(originHelper);
+        originHelper = null;
+      }
+    });
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
   <title>✦ StarPath Protocol: Route Uplink ✦</title>
   <style>
     body {
